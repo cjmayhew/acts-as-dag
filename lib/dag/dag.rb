@@ -1,16 +1,16 @@
 module Dag
 
-  #Sets up a model to act as dag links for models specified under the :for option
+  # Sets up a model to act as dag links for models specified under the :for option
   def acts_as_dag_links(options = {})
     conf = {
-            :ancestor_id_column => 'ancestor_id',
-            :ancestor_type_column => 'ancestor_type',
-            :descendant_id_column => 'descendant_id',
-            :descendant_type_column => 'descendant_type',
-            :direct_column => 'direct',
-            :count_column => 'count',
-            :polymorphic => false,
-            :node_class_name => nil}
+      ancestor_id_column: 'ancestor_id',
+      ancestor_type_column: 'ancestor_type',
+      descendant_id_column: 'descendant_id',
+      descendant_type_column: 'descendant_type',
+      direct_column: 'direct',
+      count_column: 'count',
+      polymorphic: false,
+      node_class_name: nil}
     conf.update(options)
 
     unless conf[:polymorphic]
@@ -19,33 +19,33 @@ module Dag
       end
     end
 
-    class_attribute :acts_as_dag_options, :instance_writer => false
+    class_attribute :acts_as_dag_options, instance_writer: false
     self.acts_as_dag_options = conf
 
     extend Columns
     include Columns
 
-    #access to _changed? and _was for (edge,count) if not default
+    # access to _changed? and _was for (edge,count) if not default
     unless direct_column_name == 'direct'
-      module_eval <<-"end_eval", __FILE__, __LINE__
+      module_eval <<-"END_EVAL", __FILE__, __LINE__
 						def direct_changed?
 							self.#{direct_column_name}_changed?
 						end
 						def direct_was
 							self.#{direct_column_name}_was
 						end
-      end_eval
+      END_EVAL
     end
 
     unless count_column_name == 'count'
-      module_eval <<-"end_eval", __FILE__, __LINE__
+      module_eval <<-"END_EVAL", __FILE__, __LINE__
 						def count_changed?
 							self.#{count_column_name}_changed?
 						end
 						def count_was
 							self.#{count_column_name}_was
 						end
-      end_eval
+      END_EVAL
     end
 
     internal_columns = [ancestor_id_column_name, descendant_id_column_name]
@@ -54,7 +54,7 @@ module Dag
     direct_column_name.intern
     count_column_name.intern
 
-    #links to ancestor and descendant
+    # links to ancestor and descendant
     if acts_as_dag_polymorphic?
       extend PolyColumns
       include PolyColumns
@@ -62,91 +62,91 @@ module Dag
       internal_columns << ancestor_type_column_name
       internal_columns << descendant_type_column_name
 
-      belongs_to :ancestor, :polymorphic => true
-      belongs_to :descendant, :polymorphic => true
+      belongs_to :ancestor, polymorphic: true
+      belongs_to :descendant, polymorphic: true
 
-      validates ancestor_type_column_name.to_sym, :presence => true
-      validates descendant_type_column_name.to_sym, :presence => true
-      validates ancestor_id_column_name.to_sym, :uniqueness => {:scope => [ancestor_type_column_name, descendant_type_column_name, descendant_id_column_name]}
+      validates ancestor_type_column_name.to_sym, presence: true
+      validates descendant_type_column_name.to_sym, presence: true
+      validates ancestor_id_column_name.to_sym, uniqueness: {scope: [ancestor_type_column_name, descendant_type_column_name, descendant_id_column_name]}
 
-      scope :with_ancestor, lambda { |ancestor| where(ancestor_id_column_name => ancestor.id, ancestor_type_column_name => ancestor.class.to_s) }
-      scope :with_descendant, lambda { |descendant| where(descendant_id_column_name => descendant.id, descendant_type_column_name => descendant.class.to_s) }
+      scope :with_ancestor, ->(ancestor) { where(ancestor_id_column_name => ancestor.id, ancestor_type_column_name => ancestor.class.to_s) }
+      scope :with_descendant, ->(descendant) { where(descendant_id_column_name => descendant.id, descendant_type_column_name => descendant.class.to_s) }
 
-      scope :with_ancestor_point, lambda { |point| where(ancestor_id_column_name => point.id, ancestor_type_column_name => point.type) }
-      scope :with_descendant_point, lambda { |point| where(descendant_id_column_name => point.id, descendant_type_column_name => point.type) }
+      scope :with_ancestor_point, ->(point) { where(ancestor_id_column_name => point.id, ancestor_type_column_name => point.type) }
+      scope :with_descendant_point, ->(point) { where(descendant_id_column_name => point.id, descendant_type_column_name => point.type) }
 
       extend Polymorphic
       include Polymorphic
     else
-      belongs_to :ancestor, :foreign_key => ancestor_id_column_name, :class_name => acts_as_dag_options[:node_class_name]
-      belongs_to :descendant, :foreign_key => descendant_id_column_name, :class_name => acts_as_dag_options[:node_class_name]
+      belongs_to :ancestor, foreign_key: ancestor_id_column_name, class_name: acts_as_dag_options[:node_class_name]
+      belongs_to :descendant, foreign_key: descendant_id_column_name, class_name: acts_as_dag_options[:node_class_name]
 
-      validates ancestor_id_column_name.to_sym, :uniqueness => {:scope => [descendant_id_column_name]}
+      validates ancestor_id_column_name.to_sym, uniqueness: {scope: [descendant_id_column_name]}
 
-      scope :with_ancestor, lambda { |ancestor| where(ancestor_id_column_name => ancestor.id) }
-      scope :with_descendant, lambda { |descendant| where(descendant_id_column_name => descendant.id) }
+      scope :with_ancestor, ->(ancestor) { where(ancestor_id_column_name => ancestor.id) }
+      scope :with_descendant, ->(descendant) { where(descendant_id_column_name => descendant.id) }
 
-      scope :with_ancestor_point, lambda { |point| where(ancestor_id_column_name => point.id) }
-      scope :with_descendant_point, lambda { |point| where(descendant_id_column_name => point.id) }
+      scope :with_ancestor_point, ->(point) { where(ancestor_id_column_name => point.id) }
+      scope :with_descendant_point, ->(point) { where(descendant_id_column_name => point.id) }
 
       extend Standard
       include Standard
     end
 
-    scope :direct, lambda { where(:direct => true) }
-    scope :indirect, lambda { where(:direct => false) }
+    scope :direct, -> { where(direct: true) }
+    scope :indirect, -> { where(direct: false) }
 
-    scope :ancestor_nodes, lambda { joins(:ancestor) }
-    scope :descendant_nodes, lambda { joins(:descendant) }
+    scope :ancestor_nodes, -> { joins(:ancestor) }
+    scope :descendant_nodes, -> { joins(:descendant) }
 
-    validates :ancestor, :presence => true
-    validates :descendant, :presence => true
+    validates :ancestor, presence: true
+    validates :descendant, presence: true
 
     extend Edges
     include Edges
 
     before_destroy :destroyable!, :perpetuate
     before_save :perpetuate
-    before_validation :field_check, :fill_defaults, :on => :update
-    before_validation :fill_defaults, :on => :create
+    before_validation :field_check, :fill_defaults, on: :update
+    before_validation :fill_defaults, on: :create
 
     include ActiveModel::Validations
-    validates_with CreateCorrectnessValidator, :on => :create
-    validates_with UpdateCorrectnessValidator, :on => :update
+    validates_with CreateCorrectnessValidator, on: :create
+    validates_with UpdateCorrectnessValidator, on: :update
 
 
-    #internal fields
-    code = 'def field_check ' + "\n"
+    # internal fields
+    code = "def field_check \n"
     internal_columns.each do |column|
-      code +=  "if " + column + "_changed? \n" + ' raise ActiveRecord::ActiveRecordError, "Column: '+column+' cannot be changed for an existing record it is immutable"' + "\n end \n"
+      code += "if #{column}_changed? \n raise ActiveRecord::ActiveRecordError, \"Column: #{column} cannot be changed for an existing record it is immutable\"\n end \n"
     end
     code += 'end'
     module_eval code
 
     [count_column_name].each do |column|
-      module_eval <<-"end_eval", __FILE__, __LINE__
+      module_eval <<-"END_EVAL", __FILE__, __LINE__
 						def #{column}=(x)
 							raise ActiveRecord::ActiveRecordError, "ERROR: Unauthorized assignment to #{column}: it's an internal field handled by acts_as_dag code."
 						end
-      end_eval
+      END_EVAL
     end
   end
 
   def has_dag_links(options = {})
     conf = {
-            :class_name => nil,
-            :prefix => '',
-            :ancestor_class_names => [],
-            :descendant_class_names => []
+      class_name: nil,
+      prefix: '',
+      ancestor_class_names: [],
+      descendant_class_names: []
     }
     conf.update(options)
 
-    #check that class_name is filled
+    # check that class_name is filled
     if conf[:link_class_name].nil?
       raise ActiveRecord::ActiveRecordError, "has_dag_links must be provided with :link_class_name option"
     end
 
-    #add trailing '_' to prefix
+    # add trailing '_' to prefix
     unless conf[:prefix] == ''
       conf[:prefix] += '_'
     end
@@ -179,10 +179,10 @@ module Dag
 									self.links_as_descendant_for_#{table_name}.empty?
             		end
         EOL2
-        ancestor_table_names << (prefix+'ancestor_'+table_name)
-        parent_table_names << (prefix+'parent_'+table_name)
+        ancestor_table_names << ("#{prefix}ancestor_#{table_name}")
+        parent_table_names << ("#{prefix}parent_#{table_name}")
         unless conf[:descendant_class_names].include?(class_name)
-          #this apparently is only one way is we can create some aliases making things easier
+          # this apparently is only one way is we can create some aliases making things easier
           self.class_eval "has_many :#{prefix}#{table_name}, :through => :#{prefix}links_as_descendant_for_#{table_name}, :source => :ancestor, :source_type => '#{class_name}'"
         end
       end
@@ -230,8 +230,8 @@ module Dag
                 	self.links_as_ancestor_for_#{table_name}.empty?
               	end
         EOL3
-        descendant_table_names << (prefix+'descendant_'+table_name)
-        child_table_names << (prefix+'child_'+table_name)
+        descendant_table_names << ("#{prefix}descendant_#{table_name}")
+        child_table_names << ("#{prefix}child_#{table_name}")
         unless conf[:ancestor_class_names].include?(class_name)
           self.class_eval "has_many :#{prefix}#{table_name}, :through => :#{prefix}links_as_ancestor_for_#{table_name}, :source => :descendant, :source_type => '#{class_name}'"
         end
