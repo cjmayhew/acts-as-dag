@@ -1,6 +1,6 @@
 module Dag
 
-    #Validations on model instance creation. Ensures no duplicate links, no cycles, and correct count and direct attributes
+  # Validations on model instance creation. Ensures no duplicate links, no cycles, and correct count and direct attributes
   class CreateCorrectnessValidator < ActiveModel::Validator
 
     def validate(record)
@@ -14,28 +14,28 @@ module Dag
 
     private
 
-    #check for duplicates
-    def has_duplicates(record)
+    # check for duplicates
+    def has_duplicates(record) 
       record.class.find_link(record.source, record.sink)
     end
 
-    #check for long cycles
+    # check for long cycles
     def has_long_cycles(record)
       record.class.find_link(record.sink, record.source)
     end
 
-    #check for short cycles
+    # check for short cycles
     def has_short_cycles(record)
       record.sink.matches?(record.source)
     end
 
-    #check not impossible
+    # check not impossible
     def check_possible(record)
       record.direct? ? (record.count != 0 ? 1 : 0) : (record.count < 1 ? 2 : 0)
     end
   end
 
-  #Validations on update. Makes sure that something changed, that not making a lonely link indirect, and count is correct.
+  # Validations on update. Makes sure that something changed, that not making a lonely link indirect, and count is correct.
   class UpdateCorrectnessValidator < ActiveModel::Validator
 
     def validate(record)
@@ -54,5 +54,4 @@ module Dag
       record.direct_changed? && !record.direct? && record.count == 1
     end
   end
-
 end
